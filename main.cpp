@@ -10,23 +10,44 @@ using namespace std;
 int main() {
 
     user::UserManager user_manager {};
-    string my_username = "jpricarte";
-    user::User my_user(my_username);
-
+    user::User my_user("jricarte");
+    user::User other_user("vcoimbra");
     try {
-        std::thread t1(&user::UserManager::insertUser, &user_manager, my_user);
-        std::thread t2(&user::UserManager::insertUser, &user_manager, my_user);
-
+        auto t1 = thread(&user::UserManager::userLogin, &user_manager, my_user);
+        auto t2 = thread(&user::UserManager::userLogin, &user_manager, other_user);
         t1.join();
         t2.join();
-    } catch (SemaphoreOverused &e) {
+    }
+//  Não está funcionando da forma que devia, se estoura erro na thread worker,
+//  não será tratada
+    catch (const SemaphoreOverused &e) {
         cout << e.what() << endl;
     }
 
-    bool is_active = user_manager.isUserActive(my_user);
+//  Não é multi-thread, é só pra mostrar os métodos
+    auto r1 = user_manager.isUserActive(my_user);
+    auto r2 = user_manager.isUserActive(other_user);
 
+    cout << "User 1: " << r1 << '\t';
+    cout << "User 2: " << r2 << endl;
 
-    cout << is_active << endl;
+    try {
+        auto t1 = thread(&user::UserManager::userLogout, &user_manager, my_user);
+        auto t2 = thread(&user::UserManager::userLogout, &user_manager, other_user);
+        t1.join();
+        t2.join();
+    }
+//  Não está funcionando da forma que devia, se estoura erro na thread worker,
+//  não será tratada
+    catch (const SemaphoreOverused &e) {
+        cout << e.what() << endl;
+    }
+
+    r1 = user_manager.isUserActive(my_user);
+    r2 = user_manager.isUserActive(other_user);
+
+    cout << "User 1: " << r1 << '\t';
+    cout << "User 2: " << r2 << endl;
 
     return 0;
 }

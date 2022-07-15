@@ -19,7 +19,7 @@
 #include "lp_exceptions.h"
 
 namespace user {
-    const int MAX_WAIT = 10; // time in seconds
+    const int MAX_WAIT = 5; // time in seconds
     static std::binary_semaphore active_user_list_semaphore(1);
 
     class User {
@@ -56,8 +56,12 @@ namespace user {
         std::unordered_map<std::string, User> active_users;
 
     public:
-        void insertUser(const User& user);
-        void removeUser(const User& user);
+        void createUser(const User& user); // Not implemented
+        void deleteUser(const User& user); // Not implemented
+        bool userExists(const User& user); // Not implemented
+
+        void userLogin(const User& user);
+        void userLogout(const User& user);
         bool isUserActive(const User& user);
 
     public:

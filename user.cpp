@@ -43,7 +43,7 @@ namespace user {
 
     /** USER MANAGER METHODS **/
 
-    void UserManager::insertUser(const User& user) {
+    void UserManager::userLogin(const User& user) {
         auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
         {
@@ -56,7 +56,7 @@ namespace user {
         }
     }
 
-    void UserManager::removeUser(const User &user) {
+    void UserManager::userLogout(const User &user) {
         auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
         {
