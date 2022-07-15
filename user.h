@@ -12,7 +12,7 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <ostream>
 #include <utility>
 #include <semaphore>
@@ -52,8 +52,8 @@ namespace user {
     };
 
     class UserManager {
-        std::unordered_map<std::string, User> registered_users;
-        std::unordered_map<std::string, User> active_users;
+        std::map<std::string, User> registered_users;
+        std::map<std::string, User> active_users;
 
     public:
         void createUser(const User& user); // Not implemented

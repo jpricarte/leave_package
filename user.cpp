@@ -86,7 +86,7 @@ namespace user {
     }
 
     UserManager::UserManager() {
-        registered_users = std::unordered_map<std::string, User>();
-        active_users = std::unordered_map<std::string, User>();
+        registered_users = std::map<std::string, User>();
+        active_users = std::map<std::string, User>();
     }
 } // user
