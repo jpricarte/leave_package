@@ -51,7 +51,13 @@ build cmake_object_order_depends_target_leave_package: phony || CMakeFiles/leave
 
 build CMakeFiles/leave_package.dir/main.cpp.o: CXX_COMPILER__leave_package_Debug /home/jpricarte/Documents/semestre/sisop$ II/leave_package/main.cpp || cmake_object_order_depends_target_leave_package
   DEP_FILE = CMakeFiles/leave_package.dir/main.cpp.o.d
-  FLAGS = -g -std=gnu++14
+  FLAGS = -g -std=gnu++20
+  OBJECT_DIR = CMakeFiles/leave_package.dir
+  OBJECT_FILE_DIR = CMakeFiles/leave_package.dir
+
+build CMakeFiles/leave_package.dir/user.cpp.o: CXX_COMPILER__leave_package_Debug /home/jpricarte/Documents/semestre/sisop$ II/leave_package/user.cpp || cmake_object_order_depends_target_leave_package
+  DEP_FILE = CMakeFiles/leave_package.dir/user.cpp.o.d
+  FLAGS = -g -std=gnu++20
   OBJECT_DIR = CMakeFiles/leave_package.dir
   OBJECT_FILE_DIR = CMakeFiles/leave_package.dir
 
@@ -63,7 +69,7 @@ build CMakeFiles/leave_package.dir/main.cpp.o: CXX_COMPILER__leave_package_Debug
 #############################################
 # Link the executable leave_package
 
-build leave_package: CXX_EXECUTABLE_LINKER__leave_package_Debug CMakeFiles/leave_package.dir/main.cpp.o
+build leave_package: CXX_EXECUTABLE_LINKER__leave_package_Debug CMakeFiles/leave_package.dir/main.cpp.o CMakeFiles/leave_package.dir/user.cpp.o
   FLAGS = -g
   LINK_LIBRARIES = -lpthread
   OBJECT_DIR = CMakeFiles/leave_package.dir

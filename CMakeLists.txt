@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 project(leave_package)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 
-add_executable(leave_package main.cpp)
+add_executable(leave_package main.cpp user.cpp user.h lp_exceptions.h)
 target_link_libraries(leave_package pthread)
