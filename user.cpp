@@ -19,36 +19,44 @@ namespace user {
         User::username = username;
     }
 
-    const sockaddr_in &User::getFstDevice() const {
+    sockaddr_in *User::getFstDevice() const {
         return fst_device;
     }
 
-    void User::setFstDevice(const sockaddr_in &fstDevice) {
+    void User::setFstDevice(sockaddr_in *fstDevice) {
         fst_device = fstDevice;
     }
 
-    const sockaddr_in &User::getSndDevice() const {
+    sockaddr_in *User::getSndDevice() const {
         return snd_device;
     }
 
-    void User::setSndDevice(const sockaddr_in &sndDevice) {
+    void User::setSndDevice(sockaddr_in *sndDevice) {
         snd_device = sndDevice;
+    }
+
+    int User::tryConnect() {
+        return 0;
     }
 
 
     /** USER MANAGER METHODS **/
 
-    void UserManager::createUser(const User &user) {
+    User *UserManager::createUser(const std::string& username) {
         auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
         {
-            auto user_it = this->registered_users.find(user.getUsername());
+            auto user_it = this->registered_users.find(username);
 
             if (user_it == this->registered_users.end())
             {
-                this->registered_users[user.getUsername()] = user;
+                User *user = new User(username);
+                this->registered_users[username] = *user;
+                return user;
             }
+            User *user = &(this->registered_users[username]);
             user::registered_user_list_semaphore.release();
+            return user;
         }
         else
         {
@@ -74,11 +82,11 @@ namespace user {
         }
     }
 
-    bool UserManager::userExists(const User &user) {
+    bool UserManager::userExists(const std::string username) {
         auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
 
         if (got_in) {
-            auto user_it = this->registered_users.find(user.getUsername());
+            auto user_it = this->registered_users.find(username);
             user::registered_user_list_semaphore.release();
 
             if (user_it == this->registered_users.end())

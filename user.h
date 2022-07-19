@@ -28,13 +28,14 @@ namespace user {
 
     class User {
         std::string username;
-        struct sockaddr_in fst_device, snd_device;
+        struct sockaddr_in *fst_device, *snd_device;
 
 //  Default methods and overloads
     public:
         inline explicit User(std::string username) : username(std::move(username)) {};
 
-        User();
+        // WARNING: O método é uma seção crítica
+        int tryConnect(); // try to get a socket or return -1 if user is full
 
         virtual ~User();
 
@@ -42,13 +43,13 @@ namespace user {
 
         void setUsername(const std::string &username);
 
-        const sockaddr_in &getFstDevice() const;
+        sockaddr_in *getFstDevice() const;
 
-        void setFstDevice(const sockaddr_in &fstDevice);
+        void setFstDevice(sockaddr_in *fstDevice);
 
-        const sockaddr_in &getSndDevice() const;
+        sockaddr_in *getSndDevice() const;
 
-        void setSndDevice(const sockaddr_in &sndDevice);
+        void setSndDevice(sockaddr_in *sndDevice);
 
     };
 
@@ -64,8 +65,8 @@ namespace user {
 
     public:
         void deleteUser(const User& user);
-        bool userExists(const User& user);
-        void createUser(const User& user);
+        bool userExists(std::string username);
+        User *createUser(const std::string& username);
 
     public:
         UserManager();
