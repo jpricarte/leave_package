@@ -16,6 +16,9 @@
 #include <ostream>
 #include <utility>
 #include <semaphore>
+
+#include <netinet/in.h>
+
 #include "lp_exceptions.h"
 
 namespace user {
@@ -25,8 +28,7 @@ namespace user {
 
     class User {
         std::string username;
-        std::string fst_device_ip;
-        std::string snd_device_ip;
+        struct sockaddr_in fst_device, snd_device;
 
 //  Default methods and overloads
     public:
@@ -40,15 +42,13 @@ namespace user {
 
         void setUsername(const std::string &username);
 
-        const std::string &getFstDeviceIp() const;
+        const sockaddr_in &getFstDevice() const;
 
-        void setFstDeviceIp(const std::string &fstDeviceIp);
+        void setFstDevice(const sockaddr_in &fstDevice);
 
-        const std::string &getSndDeviceIp() const;
+        const sockaddr_in &getSndDevice() const;
 
-        void setSndDeviceIp(const std::string &sndDeviceIp);
-
-        friend std::ostream &operator<<(std::ostream &os, const User &user1);
+        void setSndDevice(const sockaddr_in &sndDevice);
 
     };
 

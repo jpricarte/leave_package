@@ -19,27 +19,22 @@ namespace user {
         User::username = username;
     }
 
-    const std::string &User::getFstDeviceIp() const {
-        return fst_device_ip;
+    const sockaddr_in &User::getFstDevice() const {
+        return fst_device;
     }
 
-    void User::setFstDeviceIp(const std::string &fstDeviceIp) {
-        fst_device_ip = fstDeviceIp;
+    void User::setFstDevice(const sockaddr_in &fstDevice) {
+        fst_device = fstDevice;
     }
 
-    const std::string &User::getSndDeviceIp() const {
-        return snd_device_ip;
+    const sockaddr_in &User::getSndDevice() const {
+        return snd_device;
     }
 
-    void User::setSndDeviceIp(const std::string &sndDeviceIp) {
-        snd_device_ip = sndDeviceIp;
+    void User::setSndDevice(const sockaddr_in &sndDevice) {
+        snd_device = sndDevice;
     }
 
-    std::ostream &operator<<(std::ostream &os, const User &user1) {
-        os << "username: " << user1.username << " fst_device_ip: " << user1.fst_device_ip << " snd_device_ip: "
-           << user1.snd_device_ip;
-        return os;
-    }
 
     /** USER MANAGER METHODS **/
 
