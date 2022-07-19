@@ -47,7 +47,12 @@ namespace user {
         auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
         {
-            this->registered_users[user.getUsername()] = user;
+            auto user_it = this->registered_users.find(user.getUsername());
+
+            if (user_it == this->registered_users.end())
+            {
+                this->registered_users[user.getUsername()] = user;
+            }
             user::registered_user_list_semaphore.release();
         }
         else
@@ -60,7 +65,12 @@ namespace user {
         auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
         {
-            this->registered_users.erase(user.getUsername());
+            auto user_it = this->registered_users.find(user.getUsername());
+
+            if (user_it == this->registered_users.end())
+            {
+                this->registered_users.erase(user.getUsername());
+            }
             user::registered_user_list_semaphore.release();
         }
         else
@@ -74,59 +84,12 @@ namespace user {
 
         if (got_in) {
             auto user_it = this->registered_users.find(user.getUsername());
+            user::registered_user_list_semaphore.release();
 
             if (user_it == this->registered_users.end())
-            {
-                user::registered_user_list_semaphore.release();
-                return false;
-            }
-            else
-            {
-                user::registered_user_list_semaphore.release();
-                return false;
-            }
-        }
-        else {
-            throw SemaphoreOverused();
-        }
-    }
-
-    void UserManager::userLogin(const User& user) {
-        auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
-        if (got_in)
-        {
-            this->active_users[user.getUsername()] = user;
-            user::active_user_list_semaphore.release();
-        }
-        else
-        {
-            throw SemaphoreOverused();
-        }
-    }
-
-    void UserManager::userLogout(const User &user) {
-        auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
-        if (got_in)
-        {
-            this->active_users.erase(user.getUsername());
-            user::active_user_list_semaphore.release();
-        }
-        else
-        {
-            throw SemaphoreOverused();
-        }
-    }
-
-    bool UserManager::isUserActive(const User &user) {
-        auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
-
-        if (got_in) {
-            auto user_it = this->active_users.find(user.getUsername());
-            user::active_user_list_semaphore.release();
-            if (user_it == this->active_users.end())
                 return false;
             else
-                return true;
+                return false;
         }
         else {
             throw SemaphoreOverused();
@@ -135,6 +98,5 @@ namespace user {
 
     UserManager::UserManager() {
         registered_users = std::map<std::string, User>();
-        active_users = std::map<std::string, User>();
     }
 } // user

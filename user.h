@@ -52,18 +52,20 @@ namespace user {
 
     };
 
+
+    /*
+     * Essa classe funciona como o problema dos leitores/escritores
+     * Ao criar/deletar usuário, deve-se ter acesso exclusivo
+     * Ao Consultar, podemos ter multiplos acessos
+     * TODO: arrumar isso para funcionar como deveria
+     */
     class UserManager {
         std::map<std::string, User> registered_users;
-        std::map<std::string, User> active_users;
 
     public:
-        void createUser(const User& user); // Not implemented
-        void deleteUser(const User& user); // Not implemented
-        bool userExists(const User& user); // Not implemented
-
-        void userLogin(const User& user);
-        void userLogout(const User& user);
-        bool isUserActive(const User& user);
+        void deleteUser(const User& user);
+        bool userExists(const User& user);
+        void createUser(const User& user);
 
     public:
         UserManager();
