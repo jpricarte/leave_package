@@ -21,6 +21,7 @@
 namespace user {
     const int MAX_WAIT = 5; // time in seconds
     static std::binary_semaphore active_user_list_semaphore(1);
+    static std::binary_semaphore registered_user_list_semaphore(1);
 
     class User {
         std::string username;

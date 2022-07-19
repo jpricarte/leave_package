@@ -43,6 +43,54 @@ namespace user {
 
     /** USER MANAGER METHODS **/
 
+    void UserManager::createUser(const User &user) {
+        auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
+        if (got_in)
+        {
+            this->registered_users[user.getUsername()] = user;
+            user::registered_user_list_semaphore.release();
+        }
+        else
+        {
+            throw SemaphoreOverused();
+        }
+    }
+
+    void UserManager::deleteUser(const User &user) {
+        auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
+        if (got_in)
+        {
+            this->registered_users.erase(user.getUsername());
+            user::registered_user_list_semaphore.release();
+        }
+        else
+        {
+            throw SemaphoreOverused();
+        }
+    }
+
+    bool UserManager::userExists(const User &user) {
+        auto got_in = user::registered_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
+
+        if (got_in) {
+            auto user_it = this->registered_users.find(user.getUsername());
+
+            if (user_it == this->registered_users.end())
+            {
+                user::registered_user_list_semaphore.release();
+                return false;
+            }
+            else
+            {
+                user::registered_user_list_semaphore.release();
+                return false;
+            }
+        }
+        else {
+            throw SemaphoreOverused();
+        }
+    }
+
     void UserManager::userLogin(const User& user) {
         auto got_in = user::active_user_list_semaphore.try_acquire_for(std::chrono::seconds (MAX_WAIT));
         if (got_in)
