@@ -57,3 +57,17 @@ int main() {
     close(sockfd);
     return 0;
 }
+/*  Comunicação
+ *  PASSO 1 - Cliente envia username para ceonectar <- USARIO
+ *
+ *  Passo 2 - Servidor salvar as informações (IP) da sincronização
+ *
+ *  Passo 3 - Servidor envia um socket(TCP) com a listagem dos arquivos dentro do proprio (DOWNLOAD)
+ *
+ *  Passo 4 - Usuario faz upload no servidor.
+ *
+ *  Passo 5 - Servidor faz gerenciar o arquivo
+ *
+ *  Passo 6 - servidor verifica se a outras conexão e sincroniza os arquivos
+ *
+ */
