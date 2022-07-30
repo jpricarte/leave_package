@@ -6,10 +6,17 @@
 #include <netinet/in.h>
 
 #include "user.h"
+#include "communication.h"
 
-const int PORT = 4000;
+const int PORT = 4002;
 
 using namespace std;
+
+void communicationHandler(communication::Transmitter& transmitter, user::User& user)
+{
+    cout << "not implemented" << endl;
+}
+
 int main() {
 
     user::UserManager user_manager{};
@@ -41,18 +48,41 @@ int main() {
             cerr << "ERROR on accept" << endl;
             continue;
         }
+
+        auto transmitter = new communication::Transmitter(&client_addr, new_sockfd);
+        // Aqui recebe a primeira mensagem do cliente, recebendo o User associado
+        try {
+            communication::Packet p = transmitter->receivePackage();
+            cout << p.length << endl;
+            cout << p._payload << endl;
+        } catch (SocketReadError e) {
+            cerr << e.what() << endl;
+        }
+//        string new_username(userInfo._payload,0, userInfo.length);
+//        cout << new_username << endl;
+        delete transmitter;
+//        try {
+//            transmitter->receivePackage<communication::CommandPacket>(&userInfo);
+//            if (userInfo.command == communication::LOGIN) {
+//                string new_username(userInfo._payload);
+//                user::User new_user(new_username);
+//                cout << new_username << endl;
+////                auto t = thread(&communicationHandler, transmitter, new_user);
+//            }
+//        } catch (SocketReadError e) {
+//            cerr << e.what() << endl;
+//        }
+
         c++; // conexão estabelecida TODO: tirar isso quando arrumar o loop
 
         // Começa associando a conexão a um usuário (caso esteja disponível)
         // TODO: trocar uma primeira mensagem recebendo o nome do usuario
-        user::User *curr_user = user_manager.createUser("default");
 
         // Ao receber uma nova conexão, cria uma nova thread para lidar com o programa
         cout << "new connection established with " << client_addr.sin_addr.s_addr << endl;
 
         // Espera comandos, e executa da forma devida
         // Termina finalizando a conexão e matando o processo filho
-        close(new_sockfd);
     }
     close(sockfd);
     return 0;

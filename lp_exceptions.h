@@ -8,8 +8,20 @@
 #include <exception>
 
 struct SemaphoreOverused : public std::exception {
-    const char *what() const noexcept override {
+    [[nodiscard]] const char *what() const noexcept override {
         return "Waiting too long for semaphore";
+    }
+};
+
+struct SocketWriteError : public std::exception {
+    [[nodiscard]] const char *what() const noexcept override {
+        return "Error writing to socket";
+    }
+};
+
+struct SocketReadError : public std::exception {
+    [[nodiscard]] const char *what() const noexcept override {
+        return "Error reading data from socket";
     }
 };
 

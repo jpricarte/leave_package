@@ -32,12 +32,15 @@ namespace user {
 
 //  Default methods and overloads
     public:
+        inline User() = default;
+
         inline explicit User(std::string username) : username(std::move(username)) {};
 
         // WARNING: O método é uma seção crítica
         int tryConnect(); // try to get a socket or return -1 if user is full
 
-        virtual ~User();
+        inline virtual ~User() = default;
+
 
         const std::string &getUsername() const;
 

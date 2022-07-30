@@ -7,9 +7,6 @@
 
 namespace user {
 
-    User::User() = default;
-
-    User::~User() = default;
 
     const std::string &User::getUsername() const {
         return username;
