@@ -28,21 +28,24 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         username = std::string(user_info._payload);
         cout << username << endl;
     } catch (SocketReadError& e) {
+        transmitter->sendPackage(communication::LOGIN_FAIL);
         cerr << e.what() << endl;
         delete transmitter;
         return;
     }
+
     int tries = 0;
     do {
         try {
             user = user_manager->createUser(username);
+            // TODO: FAZER TODA A MÃO DE SALVAR CONEXÃO
         } catch (SemaphoreOverused& e) {
             cerr << username << ": " << e.what() << endl;
             tries++;
         }
     } while (tries < 3);
 
-    if (tries == 4) {
+    if (tries == 3) {
         cerr << username << ": " << "Server overload, finishing connection" << endl;
         try {
             transmitter->sendPackage(communication::LOGIN_FAIL);
@@ -65,7 +68,6 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
 }
 
 int main() {
-
     user::UserManager user_manager{};
 
     // Primeiro, configuramos o servidor TCP e abrimos ele para conexão
