@@ -42,7 +42,6 @@ namespace communication {
             std::cerr << "Error in payload" << std::endl;
             throw SocketReadError();
         }
-        std::cout << buf << std::endl;
         packet._payload = new char[packet.length];
         strcpy(packet._payload, buf);
         return packet;
