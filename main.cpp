@@ -38,7 +38,7 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
     do {
         try {
             user = user_manager->createUser(username);
-            // TODO: FAZER TODA A MÃO DE SALVAR CONEXÃO
+            // TODO: FAZER TODA A MÃO DE SALVAR CONEXÃO no usuário
         } catch (SemaphoreOverused& e) {
             cerr << username << ": " << e.what() << endl;
             tries++;
@@ -62,6 +62,8 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
     } catch (SocketWriteError& e) {
         cerr << e.what() << endl;
     }
+
+//    TODO: handler de commandos recebidos
 
 //    TODO: FAZER LOGOUT ANTES DE SAIR
     delete transmitter;
