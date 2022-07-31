@@ -8,7 +8,7 @@
 #include "user.h"
 #include "communication.h"
 
-const int PORT = 4000;
+const int PORT = 4001;
 
 using namespace std;
 
@@ -45,7 +45,7 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         }
     } while (tries < 3);
 
-    if (tries == 3) {
+    if (tries == 4) {
         cerr << username << ": " << "Server overload, finishing connection" << endl;
         try {
             transmitter->sendPackage(communication::LOGIN_FAIL);
@@ -64,7 +64,18 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
     }
 
 //    TODO: handler de commandos recebidos
+    communication::Command last_command = communication::NOP;
+    while(last_command != communication::EXIT)
+    {
+        try {
+            auto package = transmitter->receivePackage();
+            last_command = package.command;
+        } catch (SocketReadError& e) {
+            cerr << e.what() << endl;
+        }
+    }
 
+    cout << "I'll miss " << username << endl;
 //    TODO: FAZER LOGOUT ANTES DE SAIR
     delete transmitter;
 }
