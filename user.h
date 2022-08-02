@@ -18,11 +18,10 @@
 #include <semaphore>
 
 #include <netinet/in.h>
-
-#include "lp_exceptions.h"
+#include <exception>
 
 namespace user {
-    const int MAX_WAIT = 5; // time in seconds
+    const int MAX_WAIT = 1; // time in seconds
     static std::binary_semaphore registered_user_list_semaphore(1);
 
     class User {
@@ -74,6 +73,11 @@ namespace user {
         UserManager();
     };
 
+    struct SemaphoreOverused : public std::exception {
+        [[nodiscard]] const char *what() const noexcept override {
+            return "Waiting too long for semaphore";
+        }
+    };
 } // user
 
 #endif //LEAVE_PACKAGE_USER_H

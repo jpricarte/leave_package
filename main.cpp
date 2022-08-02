@@ -7,10 +7,14 @@
 
 #include "user.h"
 #include "communication.h"
+#include "commandHandler.h"
 
 const int PORT = 4001;
 
 using namespace std;
+
+std::mutex threads_manager_mutex;
+std::vector<thread*> threads_manager{};
 
 void communicationHandler(communication::Transmitter* transmitter, user::UserManager* user_manager)
 {
@@ -27,7 +31,7 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         }
         username = std::string(user_info._payload);
         cout << username << endl;
-    } catch (SocketReadError& e) {
+    } catch (communication::SocketReadError& e) {
         transmitter->sendPackage(communication::LOGIN_FAIL);
         cerr << e.what() << endl;
         delete transmitter;
@@ -39,7 +43,7 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         try {
             user = user_manager->createUser(username);
             // TODO: FAZER TODA A MÃO DE SALVAR CONEXÃO no usuário
-        } catch (SemaphoreOverused& e) {
+        } catch (user::SemaphoreOverused& e) {
             cerr << username << ": " << e.what() << endl;
             tries++;
         }
@@ -49,32 +53,26 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         cerr << username << ": " << "Server overload, finishing connection" << endl;
         try {
             transmitter->sendPackage(communication::LOGIN_FAIL);
-        } catch (SocketWriteError& e) {
+        } catch (communication::SocketWriteError& e) {
             cerr << username << ": " << e.what() << endl;
         }
         delete transmitter;
         return;
     }
 
-    cout << user->getUsername() << " logged successfully" << endl;
+    cout << username << " logged successfully" << endl;
     try {
         transmitter->sendPackage(communication::SUCCESS);
-    } catch (SocketWriteError& e) {
+    } catch (communication::SocketWriteError& e) {
         cerr << e.what() << endl;
     }
 
 //    TODO: handler de commandos recebidos
-    communication::Command last_command = communication::NOP;
-    while(last_command != communication::EXIT)
-    {
-        try {
-            auto package = transmitter->receivePackage();
-            last_command = package.command;
-        } catch (SocketReadError& e) {
-            cerr << e.what() << endl;
-        }
-    }
+//    IMPORTANTE: NÃO FECHAR SOCKET NAS THREADS AUXILIARES
+    auto* command_handler = new commandHandler(transmitter);
+    auto income = thread(&commandHandler::handleIncome, command_handler);
 
+    income.join();
     cout << "I'll miss " << username << endl;
 //    TODO: FAZER LOGOUT ANTES DE SAIR
     delete transmitter;
@@ -106,9 +104,9 @@ int main() {
     listen(sockfd, 5);
     // Depois, abrimos um looping para esperar conexões
     int c = 0;
-    while (c < 5){ //TODO: transformar em loop infinito
+    while (c < 5) { //TODO: transformar em loop infinito
         socklen_t cli_len = sizeof(struct sockaddr_in);
-        struct sockaddr_in* client_addr = new sockaddr_in;
+        auto* client_addr = new sockaddr_in;
         int new_sockfd = accept(sockfd, (struct sockaddr *) client_addr, &cli_len);
         if (new_sockfd == -1)
         {
@@ -117,34 +115,20 @@ int main() {
         }
 
         auto* transmitter = new communication::Transmitter(client_addr, new_sockfd);
-        communicationHandler(transmitter, &user_manager);
+
+        threads_manager_mutex.lock();
+            threads_manager.push_back( new thread(&communicationHandler, transmitter, &user_manager) );
+        threads_manager_mutex.unlock();
 
         c++; // conexão estabelecida TODO: tirar isso quando arrumar o loop
+    }
 
-        // Começa associando a conexão a um usuário (caso esteja disponível)
-        // TODO: trocar uma primeira mensagem recebendo o nome do usuario
-
-        // Ao receber uma nova conexão, cria uma nova thread para lidar com o programa
-        cout << "new connection established with " << client_addr->sin_addr.s_addr << endl;
-
-        // Espera comandos, e executa da forma devida
-        // Termina finalizando a conexão e matando o processo filho
+    for (std::thread* t: threads_manager) {
+        if (t->joinable()) {
+            t->join();
+        }
     }
 
     close(sockfd);
     return 0;
 }
-/*  Comunicação
- *  PASSO 1 - Cliente envia username para ceonectar <- USARIO
- *
- *  Passo 2 - Servidor salvar as informações (IP) da sincronização
- *
- *  Passo 3 - Servidor envia um socket(TCP) com a listagem dos arquivos dentro do proprio (DOWNLOAD)
- *
- *  Passo 4 - Usuario faz upload no servidor.
- *
- *  Passo 5 - Servidor faz gerenciar o arquivo
- *
- *  Passo 6 - servidor verifica se a outras conexão e sincroniza os arquivos
- *
- */

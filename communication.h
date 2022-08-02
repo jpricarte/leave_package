@@ -8,11 +8,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <ostream>
-#include <atomic>
+#include <semaphore>
 #include <iostream>
 #include <string>
-
-#include "lp_exceptions.h"
+#include <sstream>
+#include <cstring>
+#include <atomic>
+#include <exception>
 
 namespace communication {
 
@@ -38,6 +40,7 @@ namespace communication {
     };
 
     class Transmitter {
+        std::binary_semaphore* socket_semaphore;
         struct sockaddr_in* client_addr;
         int socketfd;
 
@@ -61,6 +64,18 @@ namespace communication {
                           17,
                           (unsigned int) 17,
                           (char*) "FINE (UNTIL NOW)"};
+
+    struct SocketWriteError : public std::exception {
+        [[nodiscard]] const char *what() const noexcept override {
+            return "Error writing to socket";
+        }
+    };
+
+    struct SocketReadError : public std::exception {
+        [[nodiscard]] const char *what() const noexcept override {
+            return "Error reading data from socket";
+        }
+    };
 } // communication
 
 #endif //LEAVE_PACKAGE_COMMUNICATION_H

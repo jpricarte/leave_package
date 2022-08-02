@@ -1,5 +1,5 @@
 # ninja log v5
-3	3830	1659300912011628011	CMakeFiles/leave_package.dir/user.cpp.o	db0769f622507a56
-4	2853	1659306714454139580	CMakeFiles/leave_package.dir/communication.cpp.o	4295946c3009539c
-2	3478	1659311047047662500	CMakeFiles/leave_package.dir/main.cpp.o	7390165a2730440
-3478	3760	1659311047327661778	leave_package	ae7ed8f8ae049a11
+4	4803	1659396883245613309	CMakeFiles/leave_package.dir/user.cpp.o	db0769f622507a56
+4	4050	1659404217395194528	CMakeFiles/leave_package.dir/communication.cpp.o	4295946c3009539c
+3	6100	1659404219448520444	CMakeFiles/leave_package.dir/main.cpp.o	7390165a2730440
+6100	6695	1659404220038518319	leave_package	ae7ed8f8ae049a11
