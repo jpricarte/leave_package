@@ -16,10 +16,11 @@ using namespace std;
 std::mutex threads_manager_mutex;
 std::vector<thread*> threads_manager{};
 
+
 void communicationHandler(communication::Transmitter* transmitter, user::UserManager* user_manager)
 {
-    user::User* user = nullptr;
     std::string username;
+    user::User* user;
     // Aqui recebe a primeira mensagem do cliente, recebendo o Username associado
     try {
         auto user_info = transmitter->receivePackage();
@@ -30,7 +31,6 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
             return;
         }
         username = std::string(user_info._payload);
-        cout << username << endl;
     } catch (communication::SocketReadError& e) {
         transmitter->sendPackage(communication::LOGIN_FAIL);
         cerr << e.what() << endl;
@@ -38,24 +38,13 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         return;
     }
 
-    int tries = 0;
-    do {
-        try {
-            user = user_manager->createUser(username);
-            // TODO: FAZER TODA A MÃO DE SALVAR CONEXÃO no usuário
-        } catch (user::SemaphoreOverused& e) {
-            cerr << username << ": " << e.what() << endl;
-            tries++;
-        }
-    } while (tries < 3);
+    user = user_manager->findOrCreateUser(username);
 
-    if (tries == 4) {
-        cerr << username << ": " << "Server overload, finishing connection" << endl;
-        try {
-            transmitter->sendPackage(communication::LOGIN_FAIL);
-        } catch (communication::SocketWriteError& e) {
-            cerr << username << ": " << e.what() << endl;
-        }
+    try {
+        user->tryConnect(transmitter->getSocketfd(), transmitter->getClientAddr());
+    } catch (user::TooManyConnections& e) {
+        transmitter->sendPackage(communication::LOGIN_FAIL);
+        cerr << e.what() << endl;
         delete transmitter;
         return;
     }
@@ -75,11 +64,30 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
     income.join();
     cout << "I'll miss " << username << endl;
 //    TODO: FAZER LOGOUT ANTES DE SAIR
+    user->disconnect(transmitter->getSocketfd());
     delete transmitter;
 }
 
+std::mutex connection_mutex;
+void readCommand(bool* accepting_conections)
+{
+    string command;
+    do {
+        connection_mutex.unlock();
+        cin >> command;
+        if (command == "exit")
+        {
+            connection_mutex.lock();
+            *accepting_conections = false;
+            connection_mutex.unlock();
+        }
+        connection_mutex.lock();
+    } while (*accepting_conections);
+}
+
 int main() {
-    user::UserManager user_manager{};
+
+    auto* user_manager = new user::UserManager();
 
     // Primeiro, configuramos o servidor TCP e abrimos ele para conexão
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -102,9 +110,14 @@ int main() {
     }
 
     listen(sockfd, 5);
+
+    cout << "accepting connections" << endl;
+    bool accepting_conections = true;
+    auto th_control = thread(&readCommand, &accepting_conections);
     // Depois, abrimos um looping para esperar conexões
-    int c = 0;
-    while (c < 5) { //TODO: transformar em loop infinito
+    connection_mutex.lock();
+    while (accepting_conections) {
+        connection_mutex.unlock();
         socklen_t cli_len = sizeof(struct sockaddr_in);
         auto* client_addr = new sockaddr_in;
         int new_sockfd = accept(sockfd, (struct sockaddr *) client_addr, &cli_len);
@@ -117,18 +130,19 @@ int main() {
         auto* transmitter = new communication::Transmitter(client_addr, new_sockfd);
 
         threads_manager_mutex.lock();
-            threads_manager.push_back( new thread(&communicationHandler, transmitter, &user_manager) );
+            threads_manager.push_back( new thread(&communicationHandler, transmitter, user_manager) );
         threads_manager_mutex.unlock();
 
-        c++; // conexão estabelecida TODO: tirar isso quando arrumar o loop
+        connection_mutex.lock();
     }
+    close(sockfd);
 
     for (std::thread* t: threads_manager) {
         if (t->joinable()) {
             t->join();
         }
     }
+    th_control.join();
 
-    close(sockfd);
     return 0;
 }

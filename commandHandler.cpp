@@ -53,11 +53,26 @@ void commandHandler::handleUploadFile(const std::string &filename) {
     try {
         auto file_packet = transmitter->receivePackage();
         auto file_content = std::string(file_packet._payload);
+        std::cout << "File: " << filename << std::endl;
+        std::cout << '\t' << file_content << std::endl;
         // Save file with filename and content
     } catch (communication::SocketReadError& e) {
         std::cerr << e.what() << std::endl;
-
     }
 }
 
+void commandHandler::handleDownloadFile(const std::string &filename) {
+    std::cout << "handleDownloadFile(...) Not implemented yet" << std::endl;
+}
 
+void commandHandler::handleDeleteFile(const std::string &filename) {
+    std::cout << "handleDeleteFile(...) Not implemented yet" << std::endl;
+}
+
+void commandHandler::handleGetSyncDir() {
+    std::cout << "handleGetSyncDir(...) Not implemented yet" << std::endl;
+}
+
+void commandHandler::handleListServer() {
+    std::cout << "handleListServer(...) Not implemented yet" << std::endl;
+}

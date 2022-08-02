@@ -52,6 +52,10 @@ namespace communication {
         Transmitter(sockaddr_in *clientAddr, int socketfd);
 
         virtual ~Transmitter();
+
+        sockaddr_in *getClientAddr() const;
+
+        int getSocketfd() const;
     };
 
     // USABLE CONSTANTS

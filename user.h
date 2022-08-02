@@ -21,56 +21,60 @@
 #include <exception>
 
 namespace user {
-    const int MAX_WAIT = 1; // time in seconds
-    static std::binary_semaphore registered_user_list_semaphore(1);
 
     class User {
+        static const int MAX_USERS = 2;
         std::string username;
-        struct sockaddr_in *fst_device, *snd_device;
+        // semaphore to guarantee a max num of Users
+        std::counting_semaphore<MAX_USERS>* avaliable_devices_semaphore;
+        // semaphore to avoid concurrent error in devices_sockets
+        std::binary_semaphore* devices_sockets_semaphore;
+        // maping (socket_fd, socket_addr)
+        std::map<int, sockaddr_in*> devices_sockets;
 
 //  Default methods and overloads
     public:
         inline User() = default;
 
-        inline explicit User(std::string username) : username(std::move(username)) {};
-
-        // WARNING: O método é uma seção crítica
-        int tryConnect(); // try to get a socket or return -1 if user is full
+        inline explicit User(std::string username) : username(std::move(username)) {
+            avaliable_devices_semaphore = new std::counting_semaphore<2>(2);
+            devices_sockets_semaphore = new std::binary_semaphore(1);
+        };
 
         inline virtual ~User() = default;
 
+        // WARNING: O método é uma seção crítica
+        void tryConnect(int sock_fd, sockaddr_in* addr_in); // try to get a socket or return -1 if user is full
+        void disconnect(int sock_fd); // try to get a socket or return -1 if user is full
 
         const std::string &getUsername() const;
-
         void setUsername(const std::string &username);
-
-        sockaddr_in *getFstDevice() const;
-
-        void setFstDevice(sockaddr_in *fstDevice);
-
-        sockaddr_in *getSndDevice() const;
-
-        void setSndDevice(sockaddr_in *sndDevice);
 
     };
 
 
     /*
-     * Essa classe funciona como o problema dos leitores/escritores
-     * Ao criar/deletar usuário, deve-se ter acesso exclusivo
-     * Ao Consultar, podemos ter multiplos acessos
-     * TODO: arrumar isso para funcionar como deveria
+     * Essa classe serve apenas para salvar usuarios,
+     * não é necessário apagar.
      */
     class UserManager {
-        std::map<std::string, User> registered_users;
+
+        std::binary_semaphore* registered_users_semaphore;
+        std::map<std::string, User*> registered_users;
+
+        // equivalente a leitura
 
     public:
-        void deleteUser(const User& user);
-        bool userExists(std::string username);
-        User *createUser(const std::string& username);
+        // ambos são equivalentes à escrita
+        User* findOrCreateUser(const std::string& username);
 
-    public:
         UserManager();
+    };
+
+    struct TooManyConnections : public std::exception {
+        [[nodiscard]] const char *what() const noexcept override {
+            return "All conections avaliables are in use";
+        }
     };
 
     struct SemaphoreOverused : public std::exception {
