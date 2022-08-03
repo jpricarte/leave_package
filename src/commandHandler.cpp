@@ -2,8 +2,8 @@
 // Created by jpricarte on 01/08/22.
 //
 
-#include "commandHandler.h"
-#include "communication.h"
+#include "../include/commandHandler.h"
+#include "../include/communication.h"
 
 commandHandler::commandHandler(communication::Transmitter *transmitter) : transmitter(transmitter) {}
 

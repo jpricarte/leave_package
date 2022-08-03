@@ -2,7 +2,7 @@
 // Created by jpricarte on 12/07/22.
 //
 
-#include "user.h"
+#include "../include/user.h"
 #include "lp_exceptions.h"
 
 namespace user {

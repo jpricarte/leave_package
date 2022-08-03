@@ -5,9 +5,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "user.h"
-#include "communication.h"
-#include "commandHandler.h"
+#include "../include/user.h"
+#include "../include/communication.h"
+#include "../include/commandHandler.h"
 
 const int PORT = 4001;
 

@@ -5,7 +5,8 @@
 #ifndef LEAVE_PACKAGE_COMMUNICATION_H
 #define LEAVE_PACKAGE_COMMUNICATION_H
 
-#include <sys/socket.h>
+
+# include <sys/socket.h>
 #include <netinet/in.h>
 #include <ostream>
 #include <semaphore>
@@ -36,7 +37,7 @@ namespace communication {
         unsigned int seqn; // the number in the sequence
         unsigned long int total_size; // Total size of the file
         unsigned int length; // payload size
-        char* _payload; // The content itselfs
+        char* _payload; // The content itself
     };
 
     class Transmitter {
@@ -45,7 +46,7 @@ namespace communication {
         int socketfd;
 
     public:
-        void sendPackage(const Packet& packet);
+        static void sendPackage(const Packet& packet);
 
         Packet receivePackage();
 

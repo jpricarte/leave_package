@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "user.h"
+#include "../include/user.h"
 
 /* *
  * Código de exemplo: tenta inserir 2 vezes um usuário na lista de usuários ativos

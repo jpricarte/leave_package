@@ -3,7 +3,7 @@
 //
 
 
-#include "communication.h"
+#include "../include/communication.h"
 
 namespace communication {
     void Transmitter::sendPackage(const Packet &packet) {
