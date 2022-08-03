@@ -19,6 +19,7 @@
 
 #include <netinet/in.h>
 #include <exception>
+#include "fileManager.h"
 
 namespace user {
 
@@ -32,13 +33,17 @@ namespace user {
         // maping (socket_fd, socket_addr)
         std::map<int, sockaddr_in*> devices_sockets;
 
+        //TODO: remover comentário abaixo quando estiver resolvido
+        //WARNING: O fileManger não está thread_safe
+        FileManager* file_manager;
+
 //  Default methods and overloads
     public:
-        inline User() = default;
 
-        inline explicit User(std::string username) : username(std::move(username)) {
+        inline explicit User(const std::string& username) : username(username) {
             avaliable_devices_semaphore = new std::counting_semaphore<2>(2);
             devices_sockets_semaphore = new std::binary_semaphore(1);
+            file_manager = new FileManager(username);
         };
 
         inline virtual ~User() = default;
@@ -49,6 +54,8 @@ namespace user {
 
         const std::string &getUsername() const;
         void setUsername(const std::string &username);
+
+        FileManager *getFileManager() const;
 
     };
 

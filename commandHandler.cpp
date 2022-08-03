@@ -5,7 +5,9 @@
 #include "commandHandler.h"
 #include "communication.h"
 
-commandHandler::commandHandler(communication::Transmitter *transmitter) : transmitter(transmitter) {}
+
+commandHandler::commandHandler(communication::Transmitter *transmitter, user::User *user) : transmitter(transmitter),
+                                                                                            user(user) {}
 
 void commandHandler::handleIncome() {
     communication::Command last_command = communication::NOP;
@@ -47,14 +49,12 @@ void commandHandler::handlePackage(communication::Packet packet) {
 }
 
 void commandHandler::handleUploadFile(const std::string &filename) {
-    std::cout << "handleUploadFile(...) Not implemented yet" << std::endl
-    << "\treading next packet to avoid bug" << std::endl;
+    std::cout << "Remember, it's not syncing yet" << std::endl;
 
     try {
         auto file_packet = transmitter->receivePackage();
         auto file_content = std::string(file_packet._payload);
-        std::cout << "File: " << filename << std::endl;
-        std::cout << '\t' << file_content << std::endl;
+        user->getFileManager()->createFile(filename, file_content);
         // Save file with filename and content
     } catch (communication::SocketReadError& e) {
         std::cerr << e.what() << std::endl;
@@ -76,3 +76,5 @@ void commandHandler::handleGetSyncDir() {
 void commandHandler::handleListServer() {
     std::cout << "handleListServer(...) Not implemented yet" << std::endl;
 }
+
+

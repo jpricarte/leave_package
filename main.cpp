@@ -56,9 +56,11 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         cerr << e.what() << endl;
     }
 
+    cout << user->getFileManager()->readFile("abc") << endl;
+
 //    TODO: handler de commandos recebidos
 //    IMPORTANTE: NÃO FECHAR SOCKET NAS THREADS AUXILIARES
-    auto* command_handler = new commandHandler(transmitter);
+    auto* command_handler = new commandHandler(transmitter, user);
     auto income = thread(&commandHandler::handleIncome, command_handler);
 
     income.join();

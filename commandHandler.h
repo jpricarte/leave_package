@@ -7,9 +7,11 @@
 
 
 #include "communication.h"
+#include "user.h"
 
 class commandHandler {
     communication::Transmitter* transmitter;
+    user::User* user;
 
     void handlePackage(communication::Packet packet);
     void handleUploadFile(const std::string& filename);
@@ -20,7 +22,8 @@ class commandHandler {
 
 
 public:
-    explicit commandHandler(communication::Transmitter *transmitter);
+    commandHandler(communication::Transmitter *transmitter, user::User *user);
+
     void handleIncome();
 };
 

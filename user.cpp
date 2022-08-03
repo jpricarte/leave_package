@@ -37,6 +37,10 @@ namespace user {
         avaliable_devices_semaphore->release();
     }
 
+    FileManager *User::getFileManager() const {
+        return file_manager;
+    }
+
 
     /** USER MANAGER METHODS **/
 
