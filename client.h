@@ -31,7 +31,7 @@ class Client
     //attributes
 private:
 
-    static std::atomic<bool> stop_issued;        // stop all threads
+
     static std::string username;                 // client usernme
     std::string server_ip;                       // server ip
     int         port;                            // server port
@@ -39,10 +39,10 @@ private:
     struct      sockaddr_in *server_address;     // Server socket address
 
     static      pthread_t input_handler_thread;  // Thread to listen for new incoming server messages
-    static      pthread_t keep_alive_thread;     // Thread to keep the client "alive" by sending periodic messages to server
+    static      pthread_t output_handler_thread;     // Thread to keep the client "alive" by sending periodic messages to server
 
     static      Monitor monitor;                 // Monitor that controls the sending of data through the socket
-
+    static std::atomic<bool> stop;
     //methods
 public:
     //Constructor
@@ -51,11 +51,14 @@ public:
     ~Client();
 
     void setupConnection();
+    //temp
+    static communication::Command parseCommand(const std::string s);
+    //
 
 private:
-    static void *handleUserInput(communication::Command command, std::string filename);
+
+    static void *handleUserInput(std::string command, std::string filename);
     static void *handleServerOutput();
-    static void *keepAlive(void* arg);
 };
 
 #endif //LEAVE_PACKAGE_CLIENT_H
