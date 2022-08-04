@@ -13,12 +13,12 @@ class commandHandler {
     communication::Transmitter* transmitter;
     user::User* user;
 
-    void handlePackage(communication::Packet packet);
-    void handleUploadFile(const std::string& filename);
-    void handleDownloadFile(const std::string& filename);
+    void handlePackage(communication::Packet& packet);
+    void handleUploadFile(std::stringstream& data_stream);
     void handleDeleteFile(const std::string& filename);
     void handleGetSyncDir();
     void handleListServer();
+    void handleExit();
 
 
 public:

@@ -37,6 +37,8 @@ namespace user {
         //WARNING: O fileManger não está thread_safe
         FileManager* file_manager;
 
+        // fileWatcher() fica observando os arquivos na pasta do usuário
+
 //  Default methods and overloads
     public:
 
@@ -44,6 +46,8 @@ namespace user {
             avaliable_devices_semaphore = new std::counting_semaphore<2>(2);
             devices_sockets_semaphore = new std::binary_semaphore(1);
             file_manager = new FileManager(username);
+
+            // Inicia uma thread para olhar arquivos
         };
 
         inline virtual ~User() = default;
@@ -57,6 +61,9 @@ namespace user {
 
         FileManager *getFileManager() const;
 
+        // sendToDevices(const& filename) envia o arquivo para TODOS os sockets associados
+
+        // deleteInDevices(const& filename) envia um comando para deletar o arquivo em TODOS os sockets associados
     };
 
 

@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <string>
 #include <semaphore>
+#include <condition_variable>
 
 /* DECISÃO DE PROJETO
  * Foi decidido usar o FileManager como um problema de leitores/escritores
@@ -44,6 +45,7 @@ public:
     // get_sync_dir
     static std::string readUnwatchedFile(const std::string& filename);
 };
+
 
 
 #endif //LEAVE_PACKAGE_FILEMANAGER_H

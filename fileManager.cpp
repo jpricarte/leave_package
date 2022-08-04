@@ -23,8 +23,11 @@ void FileManager::createFile(const std::string &filename, const std::string &con
     reading_writing_semaphore->acquire();
     std::ofstream file(filepath);
     if (file) {
-        file << content;
+        file << content << std::endl;
         file.close();
+    }
+    else {
+        std::cout << "could not create file" << std::endl;
     }
     reading_writing_semaphore->release();
 }
@@ -59,9 +62,8 @@ std::string FileManager::readFile(const std::string &filename) {
         while(file) {
             str.push_back(file.get());
         }
-        file.close();
     }
-    str.push_back('\n');
+    file.close();
 
     readers_mutex->acquire();
     readers_counter--;
@@ -83,11 +85,15 @@ std::string FileManager::listFiles() {
     }
     readers_mutex->release();
 
-    std::string str;
+    std::string str{};
     for (const auto & file : std::filesystem::directory_iterator(path))
     {
-        str += file.path();
+        str += file.path().filename();
         str.push_back(',');
+    }
+    if (str.empty())
+    {
+        str = "nothing to show";
     }
 
     readers_mutex->acquire();

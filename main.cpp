@@ -56,8 +56,6 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         cerr << e.what() << endl;
     }
 
-    cout << user->getFileManager()->readFile("abc") << endl;
-
 //    TODO: handler de commandos recebidos
 //    IMPORTANTE: NÃO FECHAR SOCKET NAS THREADS AUXILIARES
     auto* command_handler = new commandHandler(transmitter, user);
@@ -67,6 +65,7 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
     cout << "I'll miss " << username << endl;
 //    TODO: FAZER LOGOUT ANTES DE SAIR
     user->disconnect(transmitter->getSocketfd());
+    close(transmitter->getSocketfd());
     delete transmitter;
 }
 

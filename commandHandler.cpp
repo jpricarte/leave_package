@@ -23,16 +23,15 @@ void commandHandler::handleIncome() {
     }
 }
 
-void commandHandler::handlePackage(communication::Packet packet) {
+void commandHandler::handlePackage(communication::Packet& packet) {
     auto command = packet.command;
     auto content = std::string(packet._payload);
+    delete packet._payload;
+    std::stringstream data_stream{content};
 
     switch (command) {
         case communication::UPLOAD:
-            handleUploadFile(content);
-            break;
-        case communication::DOWNLOAD:
-            handleDownloadFile(content);
+            handleUploadFile(data_stream);
             break;
         case communication::DELETE:
             handleDeleteFile(content);
@@ -48,25 +47,26 @@ void commandHandler::handlePackage(communication::Packet packet) {
     }
 }
 
-void commandHandler::handleUploadFile(const std::string &filename) {
+void commandHandler::handleUploadFile(std::stringstream& datastream) {
     std::cout << "Remember, it's not syncing yet" << std::endl;
-
+    std::string filename{};
+    std::string file_content{};
+    getline(datastream, filename);
+    while(!datastream.eof())
+    {
+        std::string buf;
+        getline(datastream, buf);
+        file_content += buf + "\n";
+    }
     try {
-        auto file_packet = transmitter->receivePackage();
-        auto file_content = std::string(file_packet._payload);
         user->getFileManager()->createFile(filename, file_content);
-        // Save file with filename and content
+        // Save file with filename and file_content
     } catch (communication::SocketReadError& e) {
         std::cerr << e.what() << std::endl;
     }
 }
-
-void commandHandler::handleDownloadFile(const std::string &filename) {
-    std::cout << "handleDownloadFile(...) Not implemented yet" << std::endl;
-}
-
 void commandHandler::handleDeleteFile(const std::string &filename) {
-    std::cout << "handleDeleteFile(...) Not implemented yet" << std::endl;
+    user->getFileManager()->deleteFile(filename);
 }
 
 void commandHandler::handleGetSyncDir() {
@@ -74,7 +74,25 @@ void commandHandler::handleGetSyncDir() {
 }
 
 void commandHandler::handleListServer() {
-    std::cout << "handleListServer(...) Not implemented yet" << std::endl;
+    auto file_list = user->getFileManager()->listFiles();
+    communication::Packet packet = {
+            communication::LIST_SERVER,
+            1,
+            file_list.size(),
+            (unsigned int) file_list.size(),
+            (char*) file_list.c_str()
+    };
+
+    try {
+        transmitter->sendPackage(packet);
+    } catch (communication::SocketWriteError& e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+}
+
+void commandHandler::handleExit() {
+
 }
 
 
