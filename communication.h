@@ -51,6 +51,7 @@ namespace communication {
 
         Packet receivePackage();
 
+
         Transmitter(sockaddr_in *clientAddr, int socketfd);
 
         virtual ~Transmitter();
@@ -70,6 +71,11 @@ namespace communication {
                           17,
                           (unsigned int) 17,
                           (char*) "FINE (UNTIL NOW)"};
+
+    const Packet ERROR {NOP, 1,
+                          6,
+                          (unsigned int) 6,
+                          (char*) "OH OH"};
 
     struct SocketWriteError : public std::exception {
         [[nodiscard]] const char *what() const noexcept override {

@@ -2,6 +2,7 @@
 // Created by jpricarte on 01/08/22.
 //
 
+#include <fstream>
 #include "commandHandler.h"
 #include "communication.h"
 
@@ -25,16 +26,13 @@ void commandHandler::handleIncome() {
 
 void commandHandler::handlePackage(communication::Packet& packet) {
     auto command = packet.command;
-    auto content = std::string(packet._payload);
-    delete packet._payload;
-    std::stringstream data_stream{content};
 
     switch (command) {
         case communication::UPLOAD:
-            handleUploadFile(data_stream);
+            handleUploadFile(packet._payload);
             break;
         case communication::DELETE:
-            handleDeleteFile(content);
+            handleDeleteFile(packet._payload);
             break;
         case communication::GET_SYNC_DIR:
             handleGetSyncDir();
@@ -47,23 +45,52 @@ void commandHandler::handlePackage(communication::Packet& packet) {
     }
 }
 
-void commandHandler::handleUploadFile(std::stringstream& datastream) {
+void commandHandler::handleUploadFile(const std::string &filename) {
     std::cout << "Remember, it's not syncing yet" << std::endl;
-    std::string filename{};
-    std::string file_content{};
-    getline(datastream, filename);
-    while(!datastream.eof())
+
+    std::string tmp_name = '.' + filename + '_' + user->getUsername() + ".tmp";
+    std::ofstream tmp_file{tmp_name, std::ofstream::binary};
+
+    if (tmp_file)
     {
-        std::string buf;
-        getline(datastream, buf);
-        file_content += buf + "\n";
+        auto last_command = communication::UPLOAD;
+        while(last_command != communication::OK)
+        {
+            try {
+                auto* packet = new communication::Packet;
+                *packet = transmitter->receivePackage();
+                last_command = packet->command;
+                if (last_command == communication::UPLOAD)
+                {
+                    tmp_file.write(packet->_payload, packet->length);
+                }
+                delete packet;
+            } catch (communication::SocketReadError& e) {
+                std::cerr << e.what() << std::endl;
+                break;
+            } catch (...) {
+                try {
+                    transmitter->sendPackage(communication::ERROR);
+                } catch (communication::SocketWriteError& e2) {
+                    std::cerr << e2.what() << std::endl;
+                    break;
+                }
+            }
+
+            if (last_command != communication::OK)
+            {
+                try {
+                    transmitter->sendPackage(communication::SUCCESS);
+                } catch (communication::SocketWriteError& e) {
+                    std::cerr << e.what() << std::endl;
+                    break;
+                }
+            }
+        }
+        tmp_file.close();
+        user->getFileManager()->moveFile(tmp_name, filename);
     }
-    try {
-        user->getFileManager()->createFile(filename, file_content);
-        // Save file with filename and file_content
-    } catch (communication::SocketReadError& e) {
-        std::cerr << e.what() << std::endl;
-    }
+
 }
 void commandHandler::handleDeleteFile(const std::string &filename) {
     user->getFileManager()->deleteFile(filename);

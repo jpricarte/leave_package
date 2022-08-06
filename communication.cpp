@@ -86,5 +86,4 @@ namespace communication {
     int Transmitter::getSocketfd() const {
         return socketfd;
     }
-
 } // communication

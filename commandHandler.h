@@ -14,7 +14,7 @@ class commandHandler {
     user::User* user;
 
     void handlePackage(communication::Packet& packet);
-    void handleUploadFile(std::stringstream& data_stream);
+    void handleUploadFile(const std::string &filename);
     void handleDeleteFile(const std::string& filename);
     void handleGetSyncDir();
     void handleListServer();
