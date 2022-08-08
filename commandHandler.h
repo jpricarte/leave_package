@@ -15,13 +15,6 @@ class commandHandler {
 
     std::binary_semaphore *in_use_semaphore;
 
-    std::mutex *need_update_mutex;
-    std::condition_variable need_update_cv;
-    std::condition_variable was_updated_cv;
-    bool was_updated;
-    std::string updated_filename;
-    int sender_fd;
-
     bool still_working;
 
     void handlePackage(communication::Packet& packet);

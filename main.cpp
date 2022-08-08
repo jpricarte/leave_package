@@ -60,10 +60,8 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
 //    IMPORTANTE: NÃO FECHAR SOCKET NAS THREADS AUXILIARES
     auto* command_handler = new commandHandler(transmitter, user);
     auto income = thread(&commandHandler::handleIncome, command_handler);
-    auto lookUpdate = thread(&commandHandler::syncUploadInDevices, command_handler);
 
     income.join();
-    lookUpdate.join();
     cout << "I'll miss " << username << endl;
 //    TODO: FAZER LOGOUT ANTES DE SAIR
     user->disconnect(transmitter->getSocketfd());
