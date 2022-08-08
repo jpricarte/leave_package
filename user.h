@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <exception>
 #include "fileManager.h"
+#include "communication.h"
 
 namespace user {
 
@@ -31,10 +32,9 @@ namespace user {
         // semaphore to avoid concurrent error in devices_sockets
         std::binary_semaphore* devices_sockets_semaphore;
         // maping (socket_fd, socket_addr)
-        std::map<int, sockaddr_in*> devices_sockets;
+        std::map<int, communication::Transmitter*> devices_sockets;
 
-        //TODO: remover comentário abaixo quando estiver resolvido
-        //WARNING: O fileManger não está thread_safe
+
         FileManager* file_manager;
 
         // fileWatcher() fica observando os arquivos na pasta do usuário
@@ -46,15 +46,16 @@ namespace user {
             avaliable_devices_semaphore = new std::counting_semaphore<2>(2);
             devices_sockets_semaphore = new std::binary_semaphore(1);
             file_manager = new FileManager(username);
-
             // Inicia uma thread para olhar arquivos
         };
 
         inline virtual ~User() = default;
 
         // WARNING: O método é uma seção crítica
-        void tryConnect(int sock_fd, sockaddr_in* addr_in); // try to get a socket or return -1 if user is full
+        void tryConnect(int sock_fd, communication::Transmitter* transmitter); // try to get a socket or return -1 if user is full
         void disconnect(int sock_fd); // try to get a socket or return -1 if user is full
+        int countDevices();
+        bool isUniqueDevice();
 
         const std::string &getUsername() const;
         void setUsername(const std::string &username);

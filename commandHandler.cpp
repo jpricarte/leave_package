@@ -23,7 +23,12 @@ std::vector<std::string> split_str( std::string const &str, const char delim)
 }
 
 commandHandler::commandHandler(communication::Transmitter *transmitter, user::User *user) : transmitter(transmitter),
-                                                                                            user(user) {}
+                                                                                            user(user) {
+    in_use_semaphore = new std::counting_semaphore<1>(1);
+    was_updated = false;
+    need_update_mutex = new std::mutex();
+    still_working = true;
+}
 
 void commandHandler::handleIncome() {
     communication::Command last_command = communication::NOP;
@@ -37,11 +42,18 @@ void commandHandler::handleIncome() {
             std::cerr << e.what() << std::endl;
         }
     }
+    {
+        std::lock_guard lk(*need_update_mutex);
+        still_working = false;
+        was_updated = true;
+    }
+    need_update_cv.notify_all();
 }
 
 void commandHandler::handlePackage(communication::Packet& packet) {
     auto command = packet.command;
 
+    in_use_semaphore->acquire();  // Delete and Upload releases internally
     switch (command) {
         case communication::UPLOAD:
             handleUploadFile(packet._payload, packet.total_size);
@@ -51,9 +63,11 @@ void commandHandler::handlePackage(communication::Packet& packet) {
             break;
         case communication::GET_SYNC_DIR:
             handleGetSyncDir();
+            in_use_semaphore->release();
             break;
         case communication::LIST_SERVER:
             handleListServer();
+            in_use_semaphore->release();
             break;
         default:
             break;
@@ -70,13 +84,29 @@ void commandHandler::handleUploadFile(const std::string &filename, unsigned long
     {
         saveDataFlow(tmp_file);
         tmp_file.close();
-        std::cout << total_size << " vs " << std::filesystem::file_size(tmp_name);
         user->getFileManager()->moveFile(tmp_name, filename);
     }
+
+    in_use_semaphore->release();
+    std::cout << "sending to other device" << std::endl;
+
+    {
+        std::lock_guard lk(*need_update_mutex);
+        updated_filename = filename;
+        sender_fd = transmitter->getSocketfd();
+        was_updated = true;
+    }
+    need_update_cv.notify_all();
+    std::cout << "sending to other device" << std::endl;
+
+    std::unique_lock lk(*need_update_mutex);
+    was_updated_cv.wait(lk, [this]{return !was_updated;});
+    lk.unlock();
 }
 
 void commandHandler::handleDeleteFile(const std::string &filename) {
     user->getFileManager()->deleteFile(filename);
+    in_use_semaphore->release();
 }
 
 void commandHandler::handleGetSyncDir() {
@@ -221,5 +251,55 @@ void commandHandler::saveDataFlow(std::ofstream &tmp_file) {
             }
         }
     }
+}
+
+
+void commandHandler::syncUploadInDevices() {
+
+    while (still_working)
+    {
+        std::unique_lock lk(*need_update_mutex);
+        need_update_cv.wait(lk, [this]{return was_updated;});
+
+        // To avoid send garbage to other users, break the loop in the end
+        if (!still_working) break;
+
+        // If not the sender, Update all
+        if (sender_fd != transmitter->getSocketfd()) {
+
+            in_use_semaphore->acquire();
+            communication::Packet notification_packet{
+                communication::SYNC_DOWN,
+                1,
+                strlen(updated_filename.c_str()),
+                (unsigned int) strlen(updated_filename.c_str()),
+                (char*) updated_filename.c_str()
+            };
+            try {
+                transmitter->sendPackage(notification_packet);
+            } catch(communication::SocketWriteError& e) {
+                std::cerr << e.what() << std::endl;
+            }
+            in_use_semaphore->release();
+
+            was_updated = false;
+            updated_filename = "";
+            sender_fd = 0;
+            lk.unlock();
+            was_updated_cv.notify_one();
+        }
+        else {
+            std::cout << user->countDevices() << std::endl;
+            if (user->isUniqueDevice())
+            {
+                was_updated = false;
+                updated_filename = "";
+                sender_fd = 0;
+                lk.unlock();
+                was_updated_cv.notify_one();
+            }
+        }
+    }
+
 }
 

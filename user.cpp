@@ -15,12 +15,12 @@ namespace user {
         User::username = username;
     }
 
-    void User::tryConnect(int sock_fd, sockaddr_in *addr_in) {
+    void User::tryConnect(int sock_fd, communication::Transmitter* transmitter) {
         bool avaliable = avaliable_devices_semaphore->try_acquire();
         if (avaliable)
         {
             devices_sockets_semaphore->acquire();
-            devices_sockets[sock_fd] = addr_in;
+            devices_sockets[sock_fd] = transmitter;
             devices_sockets_semaphore->release();
         }
         else
@@ -39,6 +39,21 @@ namespace user {
 
     FileManager *User::getFileManager() const {
         return file_manager;
+    }
+
+    int User::countDevices() {
+        devices_sockets_semaphore->acquire();
+        int num_users = devices_sockets.size();
+        devices_sockets_semaphore->release();
+        return num_users;
+    }
+
+    bool User::isUniqueDevice() {
+        devices_sockets_semaphore->acquire();
+        int num_users = devices_sockets.size();
+        bool isUnique = num_users == 1;
+        devices_sockets_semaphore->release();
+        return isUnique;
     }
 
 
