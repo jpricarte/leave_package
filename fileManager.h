@@ -36,11 +36,18 @@ public:
 
     void moveFile(const std::string &tmp_file, const std::string &filename);
 
+    void copyFile(const std::string &file_orig, const std::string &file_dest);
+
     void deleteFile(const std::string &filename);
 
     std::string readFile(const std::string &filename);
 
     std::string listFiles();
 
+    const std::filesystem::path &getPath() const;
+
 };
+
+
+
 #endif //LEAVE_PACKAGE_FILEMANAGER_H

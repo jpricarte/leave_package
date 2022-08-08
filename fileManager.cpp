@@ -130,3 +130,29 @@ std::string FileManager::listFiles() {
     return str;
 }
 
+const std::filesystem::path &FileManager::getPath() const {
+    return path;
+}
+
+void FileManager::copyFile(const std::string &file_orig, const std::string &file_dest) {
+    readers_mutex->acquire();
+    readers_counter++;
+    if (readers_counter == 1)
+    {
+        reading_writing_semaphore->acquire();
+    }
+    readers_mutex->release();
+
+    std::filesystem::copy_file(file_orig, file_dest);
+
+    readers_mutex->acquire();
+    readers_counter--;
+    if (readers_counter == 0)
+    {
+        reading_writing_semaphore->release();
+    }
+    readers_mutex->release();
+}
+
+
+

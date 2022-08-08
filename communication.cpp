@@ -56,26 +56,25 @@ namespace communication {
     Packet Transmitter::receivePackage() {
         Packet packet{};
         socket_semaphore->acquire();
-        auto res = read(socketfd, (void*) &packet, sizeof(Packet));
+        auto res = read(socketfd, &packet, sizeof(Packet));
         if (res < 0) {
             socket_semaphore->release();
             std::cerr << "Error in header" << std::endl;
             throw SocketReadError();
         }
-        char buf[packet.length+1];
-        bzero(buf, packet.length+1);
-        res = read(socketfd, buf, packet.length);
+        packet.seqn = ntohs(packet.seqn);
+        packet.total_size = ntohl(packet.total_size);
+        packet.length = ntohs(packet.length);
+        packet._payload = new char[packet.length+1];
+        bzero(packet._payload, packet.length+1);
+        res = read(socketfd, packet._payload, packet.length);
         if (res < 0) {
             socket_semaphore->release();
             std::cerr << "Error in payload" << std::endl;
             throw SocketReadError();
         }
         socket_semaphore->release();
-        packet.seqn = ntohs(packet.seqn);
-        packet.total_size = ntohl(packet.total_size);
-        packet.length = ntohs(packet.length);
-        packet._payload = new char[packet.length];
-        strcpy(packet._payload, (const char*)buf);
+
         return packet;
     }
 

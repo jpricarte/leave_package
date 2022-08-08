@@ -14,17 +14,19 @@ class commandHandler {
     user::User* user;
 
     void handlePackage(communication::Packet& packet);
-    void handleUploadFile(const std::string &filename);
+    void handleUploadFile(const std::string &filename, unsigned long total_size);
     void handleDeleteFile(const std::string& filename);
     void handleGetSyncDir();
     void handleListServer();
-    void handleExit();
+    void handleDownloadFile(const std::string &filename);
 
+    void saveDataFlow(std::ofstream& tmp_file);
 
 public:
     commandHandler(communication::Transmitter *transmitter, user::User *user);
 
     void handleIncome();
+
 };
 
 
