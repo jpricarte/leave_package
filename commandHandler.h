@@ -14,9 +14,6 @@ class commandHandler {
     user::User* user;
 
     std::binary_semaphore *in_use_semaphore;
-
-    bool still_working;
-
     void handlePackage(communication::Packet& packet);
     void handleUploadFile(const std::string &filename, unsigned long total_size);
     void handleDeleteFile(const std::string& filename);

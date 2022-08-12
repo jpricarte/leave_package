@@ -32,7 +32,7 @@ void commandHandler::handleIncome() {
     while(last_command != communication::EXIT)
     {
         try {
-            auto packet = transmitter->receivePackage();
+            auto packet = transmitter->receivePacket();
             last_command = packet.command;
             handlePackage(packet);
         } catch (communication::SocketReadError& e) {
@@ -84,38 +84,52 @@ void commandHandler::handleDeleteFile(const std::string &filename) {
 }
 
 void commandHandler::handleGetSyncDir() {
-    auto files = split_str(user->getFileManager()->listFiles(), ',');
-    for (const auto& filename : files)
+    auto files = user->getFileManager()->listFilesAndLastModified();
+    for (const auto& file : files)
     {
         size_t filesize;
         std::string fpath = user->getFileManager()->getPath();
-        fpath += '/' + filename;
+        fpath += '/' + file.filename;
+        std::chrono::time_point<std::filesystem::__file_clock> lmod;
         try {
-            filesize = std::filesystem::file_size(fpath);
+            lmod = std::filesystem::last_write_time(fpath);
         } catch (std::filesystem::filesystem_error& e) {
             std::cerr << e.what() << std::endl;
             continue;
         }
         // primeiro, envia o nome e outros metadados (se precisar) do arquivo
+        std::string sendable = file.filename;
         communication::Packet metadata_packet {
                 communication::DOWNLOAD,
                 1,
                 filesize,
-                (unsigned int) strlen(filename.c_str()),
-                (char*) filename.c_str()
+                (unsigned int) strlen(sendable.c_str()),
+                (char*) sendable.c_str()
         };
-
         try {
-            transmitter->sendPackage(metadata_packet);
+            transmitter->sendPacket(metadata_packet);
         } catch (communication::SocketWriteError& e) {
             std::cerr << e.what() << std::endl;
         }
 
-        handleDownloadFile(filename);
+        communication::Packet metadata_packet2 {
+                communication::DOWNLOAD,
+                2,
+                filesize,
+                sizeof(std::chrono::time_point<std::filesystem::__file_clock>),
+                (char*) &lmod
+        };
+        try {
+            transmitter->sendPacket(metadata_packet2);
+        } catch (communication::SocketWriteError& e) {
+            std::cerr << e.what() << std::endl;
+        }
+
+        handleDownloadFile(file.filename);
     }
     
     try {
-        transmitter->sendPackage(communication::SUCCESS);
+        transmitter->sendPacket(communication::SUCCESS);
     } catch (communication::SocketWriteError& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -132,7 +146,7 @@ void commandHandler::handleListServer() {
     };
 
     try {
-        transmitter->sendPackage(packet);
+        transmitter->sendPacket(packet);
     } catch (communication::SocketWriteError& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -148,8 +162,8 @@ void commandHandler::handleDownloadFile(const std::string &filename) {
         return;
     }
 
-    // depois, envia o arquivo em partes de 255 Bytes
-    const unsigned int BUF_SIZE = 255;
+    // depois, envia o arquivo em partes de 511 Bytes
+    const unsigned int BUF_SIZE = 1023;
     char buf[BUF_SIZE] = {};
     unsigned int i = 2;
     while(!file.eof())
@@ -160,32 +174,22 @@ void commandHandler::handleDownloadFile(const std::string &filename) {
                 communication::DOWNLOAD,
                 i,
                 filesize,
-                (unsigned int) strlen(buf),
+                (unsigned int) BUF_SIZE,
                 buf
         };
 
         try {
-            transmitter->sendPackage(data_packet);
+            transmitter->sendPacket(data_packet);
         } catch (communication::SocketWriteError& e) {
             std::cerr << e.what() << std::endl;
             break;
         }
 
-        try {
-            communication::Packet packet = transmitter->receivePackage();
-            if (packet.command == communication::OK) {
-                i++;
-            } else {
-                break;
-            }
-        } catch (communication::SocketReadError& e) {
-            std::cerr << e.what() << std::endl;
-            break;
-        }
+        i++;
     }
 
     try {
-        transmitter->sendPackage(communication::SUCCESS);
+        transmitter->sendPacket(communication::SUCCESS);
     } catch (communication::SocketWriteError& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -194,35 +198,19 @@ void commandHandler::handleDownloadFile(const std::string &filename) {
 
 void commandHandler::saveDataFlow(std::ofstream &tmp_file) {
     auto last_command = communication::UPLOAD;
+    communication::Packet packet{};
     while(last_command != communication::OK)
     {
         try {
-            auto packet = transmitter->receivePackage();
+            packet = transmitter->receivePacket();
             last_command = packet.command;
             if (last_command == communication::UPLOAD)
             {
-                tmp_file.write((char*)packet._payload, packet.length);
+                tmp_file.write(packet._payload, packet.length);
             }
         } catch (communication::SocketReadError& e) {
             std::cerr << e.what() << std::endl;
             break;
-        } catch (...) {
-            try {
-                transmitter->sendPackage(communication::ERROR);
-            } catch (communication::SocketWriteError& e2) {
-                std::cerr << e2.what() << std::endl;
-                break;
-            }
-        }
-
-        if (last_command != communication::OK)
-        {
-            try {
-                transmitter->sendPackage(communication::SUCCESS);
-            } catch (communication::SocketWriteError& e) {
-                std::cerr << e.what() << std::endl;
-                break;
-            }
         }
     }
 }
