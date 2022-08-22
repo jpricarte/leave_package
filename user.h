@@ -12,10 +12,12 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 #include <map>
 #include <ostream>
 #include <utility>
 #include <semaphore>
+#include <condition_variable>
 
 #include <netinet/in.h>
 #include <exception>
@@ -24,6 +26,8 @@
 
 namespace user {
 
+
+
     class User {
         static const int MAX_USERS = 2;
         std::string username;
@@ -31,13 +35,17 @@ namespace user {
         std::counting_semaphore<MAX_USERS>* avaliable_devices_semaphore;
         // semaphore to avoid concurrent error in devices_sockets
         std::binary_semaphore* devices_sockets_semaphore;
-        // maping (socket_fd, socket_addr)
+        // maping (socket_fd, transmitter)
         std::map<int, communication::Transmitter*> devices_sockets;
-
 
         FileManager* file_manager;
 
-        // fileWatcher() fica observando os arquivos na pasta do usuário
+        // counting semaphore to sync
+        std::counting_semaphore<INT16_MAX>* last_operations_semaphore;
+        // A queue of command to send to devices
+        std::vector<communication::CommandRecord> last_operations;
+        // had_operation cv to wakeup sync_threads
+        std::condition_variable* had_operation_cv;
 
 //  Default methods and overloads
     public:
@@ -46,7 +54,9 @@ namespace user {
             avaliable_devices_semaphore = new std::counting_semaphore<2>(2);
             devices_sockets_semaphore = new std::binary_semaphore(1);
             file_manager = new FileManager(username);
-            // Inicia uma thread para olhar arquivos
+            last_operations_semaphore = new std::counting_semaphore<INT16_MAX>(0);
+            last_operations = std::vector<communication::CommandRecord>();
+            had_operation_cv = new std::condition_variable();
         };
 
         inline virtual ~User() = default;
@@ -62,9 +72,9 @@ namespace user {
 
         FileManager *getFileManager() const;
 
-        // sendToDevices(const& filename) envia o arquivo para TODOS os sockets associados
+        void pushOperationToSync(communication::CommandRecord& command_record);
 
-        // deleteInDevices(const& filename) envia um comando para deletar o arquivo em TODOS os sockets associados
+        communication::CommandRecord popOperationToSync(int req_sock_fd);
     };
 
 

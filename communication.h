@@ -28,7 +28,15 @@ namespace communication {
         LIST_CLIENT,
         OK,
         EXIT,
+        SYNC_UPLOAD,
+        SYNC_DELETE,
         NOP
+    };
+
+    struct CommandRecord {
+        int sock_fd;
+        Command command;
+        std::string filename;
     };
 
     struct Packet {

@@ -8,7 +8,7 @@
 
 #include "user.h"
 #include "communication.h"
-#include "commandHandler.h"
+#include "RequestHandler.h"
 
 const int PORT = 4001;
 
@@ -71,18 +71,28 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
         cerr << e.what() << endl;
     }
 
-    auto* command_handler = new commandHandler(transmitter, user);
-    auto income = thread(&commandHandler::handleIncome, command_handler);
+    auto* request_handler = new RequestHandler(transmitter, user);
+    auto income = thread(&RequestHandler::handleIncome, request_handler);
+//    auto outcome = thread(&RequestHandler::syncWithOtherDevice, request_handler);
 
     income.join();
+//    outcome.join();
     cout << "I'll miss " << username << endl;
+
     user->disconnect(transmitter->getSocketfd());
     close(transmitter->getSocketfd());
     delete transmitter;
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc != 2)
+    {
+        cerr << "usage:" << argv[0] << " <port>" << endl;
+        return -1;
+    }
+
     signal(SIGINT, reinterpret_cast<__sighandler_t>(handleSigInt));
     signal(SIGTERM, reinterpret_cast<__sighandler_t>(handleSigInt));
 
@@ -98,7 +108,7 @@ int main() {
 
     struct sockaddr_in serv_addr{};
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(atoi(argv[1]));
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     bzero(&(serv_addr.sin_zero), 8);
 
@@ -124,7 +134,7 @@ int main() {
 
         auto* transmitter = new communication::Transmitter(client_addr, main_socket);
 
-            threads_pool.push_back(new thread(&communicationHandler, transmitter, user_manager) );
+        threads_pool.push_back(new thread(&communicationHandler, transmitter, user_manager) );
     }
     return 0;
 }

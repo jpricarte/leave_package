@@ -15,7 +15,7 @@ FileManager::FileManager(const std::string &folderName) {
     readers_counter = 0;
 }
 
-// TODO: arrumar o fim do arquivo
+
 void FileManager::createFile(const std::string &filename, const std::string &content) {
     std::string filepath = std::filesystem::relative(path);
     filepath += "/" + filename;
