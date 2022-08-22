@@ -205,9 +205,9 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
 
             if (last_command == communication::UPLOAD)
             {
-                if (packet.seqn != last_seqn+1) {
-                    std::cout << packet.seqn << " instead " << last_seqn+1 << " expected" << std::endl;
-                }
+                // if (packet.seqn != last_seqn+1) {
+                //     std::cout << packet.seqn << " instead " << last_seqn+1 << " expected" << std::endl;
+                // }
                 last_seqn++;
                 tmp_file.write(packet._payload, packet.length);
             }
@@ -218,6 +218,7 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
     }
 }
 
+// Not used
 void RequestHandler::syncWithOtherDevice() {
     communication::CommandRecord cr{0,communication::NOP,""};
 
