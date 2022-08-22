@@ -77,7 +77,7 @@ namespace communication {
         pckt_size = 0;
         while (pckt_size < packet.length)
         {
-            auto res = read(socketfd, packet._payload, packet.length);
+            auto res = read(socketfd, (void*) &packet._payload[pckt_size], packet.length - pckt_size);
             if (res < 0) {
                 socket_semaphore->release();
                 std::cerr << "Error in payload" << std::endl;
@@ -87,6 +87,7 @@ namespace communication {
         }
         
         socket_semaphore->release();
+        std::cout << packet.seqn << ": readed " << pckt_size << " of " << packet.length << std::endl;
 
         return packet;
     }

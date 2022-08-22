@@ -154,8 +154,8 @@ void RequestHandler::handleDownloadFile(const std::string &filename) {
     }
 //    std::cout << filename << " - " << filesize << std::endl;
     std::size_t remeaning_size = filesize;
-    // depois, envia o arquivo em partes de 1023 Bytes
-    const unsigned int BUF_SIZE = 1023;
+    // depois, envia o arquivo em partes de 1024 Bytes
+    const unsigned int BUF_SIZE = 1024;
     char buf[BUF_SIZE] = {};
     unsigned int i = 2;
     while(remeaning_size > 0)
@@ -193,10 +193,11 @@ void RequestHandler::handleDownloadFile(const std::string &filename) {
 void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size) {
     auto last_command = communication::UPLOAD;
     communication::Packet packet{};
+    unsigned int last_seqn = 1;
     std::size_t current_size = 0;
-    while(last_command != communication::OK)
+    while(current_size < file_size)
     {
-        std::cout << current_size << " of " << file_size << std::endl;
+        // std::cout << current_size << " of " << file_size << std::endl;
         try {
             packet = transmitter->receivePacket();
             last_command = packet.command;
@@ -204,15 +205,17 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
 
             if (last_command == communication::UPLOAD)
             {
+                if (packet.seqn != last_seqn+1) {
+                    std::cout << packet.seqn << " instead " << last_seqn+1 << " expected" << std::endl;
+                }
+                last_seqn++;
                 tmp_file.write(packet._payload, packet.length);
-//                current_size += packet.length;
             }
         } catch (communication::SocketReadError& e) {
             std::cerr << e.what() << std::endl;
             break;
         }
     }
-    std::cout << "I finish" << std::endl;
 }
 
 void RequestHandler::syncWithOtherDevice() {
