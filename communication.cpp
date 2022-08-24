@@ -87,7 +87,6 @@ namespace communication {
         }
         
         socket_semaphore->release();
-        std::cout << packet.seqn << ": readed " << pckt_size << " of " << packet.length << std::endl;
 
         return packet;
     }

@@ -153,16 +153,16 @@ void RequestHandler::handleDownloadFile(const std::string &filename) {
         return;
     }
 //    std::cout << filename << " - " << filesize << std::endl;
-    std::size_t remeaning_size = filesize;
+    std::size_t remaining_size = filesize;
     // depois, envia o arquivo em partes de 1024 Bytes
     const unsigned int BUF_SIZE = 1024;
     char buf[BUF_SIZE] = {};
     unsigned int i = 2;
-    while(remeaning_size > 0)
+    while(remaining_size > 0)
     {
         bzero(buf, BUF_SIZE);
-        auto read_size = std::min((unsigned long)BUF_SIZE, remeaning_size);
-        remeaning_size -= read_size;
+        auto read_size = std::min((unsigned long)BUF_SIZE, remaining_size);
+        remaining_size -= read_size;
         file.read(buf, (unsigned int) read_size);
 
         communication::Packet data_packet {
@@ -197,7 +197,6 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
     std::size_t current_size = 0;
     while(current_size < file_size)
     {
-        // std::cout << current_size << " of " << file_size << std::endl;
         try {
             packet = transmitter->receivePacket();
             last_command = packet.command;
@@ -205,9 +204,6 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
 
             if (last_command == communication::UPLOAD)
             {
-                // if (packet.seqn != last_seqn+1) {
-                //     std::cout << packet.seqn << " instead " << last_seqn+1 << " expected" << std::endl;
-                // }
                 last_seqn++;
                 tmp_file.write(packet._payload, packet.length);
             }

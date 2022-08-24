@@ -73,10 +73,10 @@ void communicationHandler(communication::Transmitter* transmitter, user::UserMan
 
     auto* request_handler = new RequestHandler(transmitter, user);
     auto income = thread(&RequestHandler::handleIncome, request_handler);
-//    auto outcome = thread(&RequestHandler::syncWithOtherDevice, request_handler);
+    auto outcome = thread(&RequestHandler::syncWithOtherDevice, request_handler);
 
     income.join();
-//    outcome.join();
+    outcome.join();
     cout << "I'll miss " << username << endl;
 
     user->disconnect(transmitter->getSocketfd());

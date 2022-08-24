@@ -59,6 +59,8 @@ namespace user {
         return isUnique;
     }
 
+
+// Not Used
     void User::pushOperationToSync(communication::CommandRecord &command_record) {
         last_operations.push_back(command_record);
         last_operations_semaphore->release();
