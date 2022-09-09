@@ -50,11 +50,9 @@ void RequestHandler::handlePackage(communication::Packet& packet) {
     switch (command) {
         case communication::UPLOAD:
             handleUploadFile(packet._payload, packet.total_size);
-            user->pushOperationToSync(command_record);
             break;
         case communication::DELETE:
             handleDeleteFile(packet._payload);
-            user->pushOperationToSync(command_record);
             break;
         case communication::GET_SYNC_DIR:
             handleGetSyncDir();
@@ -63,7 +61,6 @@ void RequestHandler::handlePackage(communication::Packet& packet) {
             handleListServer();
             break;
         case communication::EXIT:
-            user->pushOperationToSync(command_record);
             break;
         default:
             break;
@@ -81,6 +78,12 @@ void RequestHandler::handleUploadFile(const std::string &filename, std::size_t f
         saveDataFlow(tmp_file, file_size);
         tmp_file.close();
         user->getFileManager()->moveFile(tmp_name, filename);
+        std::string final_path = user->getUsername() + "/" + filename;
+        user->getUpdateHandler(transmitter->getSocketfd())->sendFile(filename);
+        UpdateHandler* other_device_update_handler
+            = user->getOtherDeviceUpdateHandler(transmitter->getSocketfd());
+        if (other_device_update_handler != nullptr)
+            std::thread(&UpdateHandler::sendFile, other_device_update_handler, filename).detach();
     }
     else {
         std::cerr << filename << ": can't open" << std::endl;
@@ -89,6 +92,11 @@ void RequestHandler::handleUploadFile(const std::string &filename, std::size_t f
 
 void RequestHandler::handleDeleteFile(const std::string &filename) {
     user->getFileManager()->deleteFile(filename);
+    user->getUpdateHandler(transmitter->getSocketfd())->deleteFile(filename);
+    auto other_user_update_handler =
+            user->getOtherDeviceUpdateHandler(transmitter->getSocketfd());
+    if (other_user_update_handler != nullptr)
+        other_user_update_handler->deleteFile(filename);
 }
 
 void RequestHandler::handleGetSyncDir() {
@@ -214,39 +222,6 @@ void RequestHandler::saveDataFlow(std::ofstream &tmp_file, std::size_t file_size
     }
 }
 
-// Not used
-void RequestHandler::syncWithOtherDevice() {
-    communication::CommandRecord cr{0,communication::NOP,""};
+void RequestHandler::sendFileThroughTransmitter(communication::Transmitter *transmitter, const std::string& fpath) {
 
-    while (cr.command != communication::EXIT) {
-        cr = user->popOperationToSync(transmitter->getSocketfd());
-        if (cr.command == communication::NOP) continue;
-        communication::Packet packet = {communication::NOP, 1,
-                                        cr.filename.size(),
-                                        (unsigned int) cr.filename.size(),
-                                        (char*) cr.filename.c_str()
-        };
-        in_use_semaphore->acquire();
-        switch(cr.command) {
-            case communication::UPLOAD:
-                packet.command = communication::SYNC_UPLOAD;
-                try {
-                    transmitter->sendPacket(packet);
-                } catch (communication::SocketWriteError& e) {
-                    std::cerr << e.what() << std::endl;
-                }
-                break;
-            case communication::DELETE:
-                packet.command = communication::SYNC_DELETE;
-                try {
-                    transmitter->sendPacket(packet);
-                } catch (communication::SocketWriteError& e) {
-                    std::cerr << e.what() << std::endl;
-                }
-                break;
-            default:
-                break;
-        }
-        in_use_semaphore->release();
-    }
 }

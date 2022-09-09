@@ -26,6 +26,7 @@ class RequestHandler {
 
 public:
     RequestHandler(communication::Transmitter *transmitter, user::User *user);
+    static void sendFileThroughTransmitter(communication::Transmitter *transmitter, const std::string& fpath);
 
     void handleIncome();
     void syncWithOtherDevice();

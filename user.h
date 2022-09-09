@@ -23,20 +23,20 @@
 #include <exception>
 #include "fileManager.h"
 #include "communication.h"
+#include "UpdateHandler.h"
 
 namespace user {
-
-
 
     class User {
         static const int MAX_USERS = 2;
         std::string username;
         // semaphore to guarantee a max num of Users
         std::counting_semaphore<MAX_USERS>* avaliable_devices_semaphore;
-        // semaphore to avoid concurrent error in devices_sockets
+        // semaphore to avoid concurrent error in devices_command_sockets
         std::binary_semaphore* devices_sockets_semaphore;
         // maping (socket_fd, transmitter)
-        std::map<int, communication::Transmitter*> devices_sockets;
+        std::map<int, communication::Transmitter*> devices_command_sockets;
+        std::map<int, UpdateHandler*> devices_update_handler;
 
         FileManager* file_manager;
 
@@ -62,19 +62,18 @@ namespace user {
         inline virtual ~User() = default;
 
         // WARNING: O método é uma seção crítica
-        void tryConnect(int sock_fd, communication::Transmitter* transmitter); // try to get a socket or return -1 if user is full
-        void disconnect(int sock_fd); // try to get a socket or return -1 if user is full
-        int countDevices();
+        void tryConnect(int command_socket, communication::Transmitter* command_transmitter,
+                        UpdateHandler* update_handler); // try to get a socket or return -1 if user is full
+        void disconnect(int command_socket); // try to get a socket or return -1 if user is full
+        unsigned long countDevices();
         bool isUniqueDevice();
+        UpdateHandler* getUpdateHandler(int curr_command_sock);
+        UpdateHandler* getOtherDeviceUpdateHandler(int curr_command_sock);
 
         const std::string &getUsername() const;
         void setUsername(const std::string &username);
 
         FileManager *getFileManager() const;
-
-        void pushOperationToSync(communication::CommandRecord& command_record);
-
-        communication::CommandRecord popOperationToSync(int req_sock_fd);
     };
 
 

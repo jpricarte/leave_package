@@ -15,12 +15,15 @@ namespace user {
         User::username = username;
     }
 
-    void User::tryConnect(int sock_fd, communication::Transmitter* transmitter) {
+    void User::tryConnect(int command_socket, communication::Transmitter* command_transmitter,
+                          UpdateHandler* update_handler) {
         bool avaliable = avaliable_devices_semaphore->try_acquire();
         if (avaliable)
         {
             devices_sockets_semaphore->acquire();
-            devices_sockets[sock_fd] = transmitter;
+            devices_command_sockets[command_socket] = command_transmitter;
+            // Use the same socket to associate them
+            devices_update_handler[command_socket] = update_handler;
             devices_sockets_semaphore->release();
         }
         else
@@ -29,13 +32,11 @@ namespace user {
         }
     }
 
-    void User::disconnect(int sock_fd) {
+    void User::disconnect(int command_socket) {
         devices_sockets_semaphore->acquire();
-        devices_sockets.erase(sock_fd);
+        devices_command_sockets.erase(command_socket);
+        devices_update_handler.erase(command_socket);
         devices_sockets_semaphore->release();
-
-        last_operations.insert(last_operations.begin(), {sock_fd, communication::EXIT, ""});
-        last_operations_semaphore->release();
 
         avaliable_devices_semaphore->release();
     }
@@ -44,67 +45,36 @@ namespace user {
         return file_manager;
     }
 
-    int User::countDevices() {
+    unsigned long User::countDevices() {
         devices_sockets_semaphore->acquire();
-        int num_users = devices_sockets.size();
+        auto num_users = devices_command_sockets.size();
         devices_sockets_semaphore->release();
         return num_users;
     }
 
     bool User::isUniqueDevice() {
         devices_sockets_semaphore->acquire();
-        int num_users = devices_sockets.size();
+        int num_users = devices_command_sockets.size();
         bool isUnique = num_users == 1;
         devices_sockets_semaphore->release();
         return isUnique;
     }
 
-
-// Not Used
-    void User::pushOperationToSync(communication::CommandRecord &command_record) {
-        last_operations.push_back(command_record);
-        last_operations_semaphore->release();
-    }
-
-    /*
-     * Lógica por trás:
-     * Ou o dispositivo enviou o record, ou precisa atualizar localmente
-     * Caso seja quem enviou, retorna um commando record com NOP e sock 0
-     * Caso contrário, retorna o record normal e apaga esse elemento.
-     * Está tudo bem que quem enviou o record não veja a mensagem, pois ela
-     * seria ignorada de qualquer forma.
-     * */
-    communication::CommandRecord User::popOperationToSync(int req_sock_fd) {
-        communication::CommandRecord cr {0, communication::NOP, ""};
-
-        last_operations_semaphore->acquire();
-        cr = last_operations.front();
-
-        if (cr.command != communication::EXIT) { // Normal operation
-            if (req_sock_fd == cr.sock_fd) {
-                cr.sock_fd = 0;
-                cr.command = communication::NOP;
-                if (countDevices() > 1) {
-                    last_operations_semaphore->release();
-                }
-            } else {
-                last_operations.erase(last_operations.begin());
-            }
-        } else {
-            if (req_sock_fd == cr.sock_fd) { // Exit use the inverse logic
-                last_operations.erase(last_operations.begin());
-            } else {
-                cr.sock_fd = 0;
-                cr.command = communication::NOP;
-                if (countDevices() > 1) {
-                    last_operations_semaphore->release();
-                }
-            }
+    UpdateHandler *User::getOtherDeviceUpdateHandler(int curr_command_sock) {
+        devices_sockets_semaphore->acquire();
+        for (auto sock_trans : devices_update_handler)
+        {
+            if (std::get<0>(sock_trans) == curr_command_sock) continue;
+            devices_sockets_semaphore->release();
+            return std::get<1>(sock_trans);
         }
-
-        return cr;
+        devices_sockets_semaphore->release();
+        return nullptr;
     }
 
+    UpdateHandler *User::getUpdateHandler(int curr_command_socket) {
+        return devices_update_handler[curr_command_socket];
+    }
 
     /** USER MANAGER METHODS **/
 

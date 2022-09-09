@@ -30,9 +30,9 @@ namespace communication {
     void Transmitter::sendPacket(const Packet &packet) {
         auto* sendable_packet = new Packet{
                 packet.command,
-                htons(packet.seqn),
+                htonl(long(packet.seqn)),
                 htonl(packet.total_size),
-                htons(packet.length),
+                htonl(long(packet.length)),
                 nullptr
         };
 
@@ -67,10 +67,10 @@ namespace communication {
             }
             pckt_size += res;
         }
-        
-        packet.seqn = ntohs(packet.seqn);
+
+        packet.seqn = ntohl(long(packet.seqn));
         packet.total_size = ntohl(packet.total_size);
-        packet.length = ntohs(packet.length);
+        packet.length = ntohl(long(packet.length));
         packet._payload = new char[packet.length+1];
         bzero(packet._payload, packet.length+1);
         
